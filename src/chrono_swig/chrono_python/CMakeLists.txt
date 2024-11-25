@@ -98,6 +98,11 @@ message(STATUS "...find SWIG")
 find_package(SWIG REQUIRED)
 include(${SWIG_USE_FILE})
 
+# Set the SWIG library directory
+set(SWIG_LIB_DIR "${SWIG_DIR}/Lib")
+include_directories(${SWIG_LIB_DIR})
+include_directories(${SWIG_LIB_DIR}/python)
+
 # The generated .cxx wrapper can be so huge that the /bigobj flag is required in VC++
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   /bigobj")
@@ -692,6 +697,27 @@ if(ENABLE_MODULE_VEHICLE AND ENABLE_MODULE_VEHICLE_MODELS)
   #if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   #  set_target_properties(${SWIG_MODULE_${CHPY_VEHICLE}_REAL_NAME} PROPERTIES SWIG_COMPILE_OPTIONS "-D_WIN32 -DWNT")
   #endif()
+
+  # Ensure CUDA is found
+find_package(CUDA REQUIRED)
+
+# Include CUDA and Thrust directories
+include_directories(${CUDA_INCLUDE_DIRS})
+include_directories(${CUDA_TOOLKIT_ROOT_DIR}/include)
+
+# Link CUDA and Thrust libraries
+list(APPEND CH_FSI_LINKED_LIBRARIES ${CUDA_cudadevrt_LIBRARY})
+list(APPEND CH_FSI_LINKED_LIBRARIES ${CUDA_CUDART_LIBRARY})
+list(APPEND CH_FSI_LINKED_LIBRARIES ${CUDA_cusparse_LIBRARY})
+list(APPEND CH_FSI_LINKED_LIBRARIES ${CUDA_cublas_LIBRARY})
+list(APPEND CH_FSI_LINKED_LIBRARIES ${CUDA_cufft_LIBRARY})
+list(APPEND CH_FSI_LINKED_LIBRARIES ${CUDA_curand_LIBRARY})
+list(APPEND CH_FSI_LINKED_LIBRARIES ${CUDA_cusolver_LIBRARY})
+
+# Add the necessary libraries to the target
+target_link_libraries(${SWIG_MODULE_${CHPY_VEHICLE}_REAL_NAME} ${CH_FSI_LINKED_LIBRARIES})
+
+target_link_libraries(${SWIG_MODULE_${CHPY_VEHICLE}_REAL_NAME} ChronoEngine_fsi)
 
   # Ensure that the PYD library file is generated in the bin/ directory.
   set_target_properties(${SWIG_MODULE_${CHPY_VEHICLE}_REAL_NAME} PROPERTIES

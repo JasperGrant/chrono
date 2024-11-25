@@ -1,6 +1,10 @@
 %{
 #include <string>
 #include <vector>
+#include <cuda_runtime.h>
+#include <thrust/device_ptr.h>
+#include <thrust/copy.h>
+#include <thrust/system/cuda/execution_policy.h>
 
 #include "chrono/core/ChVector3.h"
 #include "chrono/core/ChFrame.h"
@@ -15,11 +19,22 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 
 #include "chrono_vehicle/terrain/SCMTerrain.h"
+
+#include "chrono_fsi/ChDefinitionsFsi.h"
+#include "chrono_fsi/math/custom_math.h"
+#include "chrono_fsi/ChSystemFsi.h"
+#include "chrono_fsi/ChFsiProblem.h"
+#include "chrono_vehicle/terrain/CRMTerrain.h"
 #if defined(SWIGCSHARP) && defined(HAVE_OPENCRG)
     #include "chrono_vehicle/terrain/CRGTerrain.h"
 #endif
 #include "chrono_thirdparty/rapidjson/document.h"
 %}
+
+#define CH_FSI_API
+#define __host__
+#define __device__
+#define __inline__
 
 #ifdef SWIGCSHARP
 %import "chrono_swig/interface/core/ChColor.i"
@@ -41,6 +56,7 @@
 %import(module = "pychrono.core") "chrono_swig/interface/core/ChNodeXYZ.i"
 %import(module = "pychrono.core") "chrono_swig/interface/core/ChLoadContainer.i"
 %import(module = "pychrono.core") "../../../chrono/assets/ChVisualShapeTriangleMesh.h"
+
 #endif
 
 %shared_ptr(chrono::vehicle::ChTerrain)
@@ -50,6 +66,11 @@
 %shared_ptr(chrono::vehicle::SCMLoader)
 %shared_ptr(chrono::vehicle::SCMTerrain)
 %shared_ptr(chrono::vehicle::SCMTerrain::SoilParametersCallback)
+
+%shared_ptr(chrono::fsi::ChFsiProblemCylindrical)
+%shared_ptr(chrono::fsi::ChFsiProblem)
+%shared_ptr(chrono::fsi::ChFsiProblemCartesian)
+%shared_ptr(chrono::vehicle::CRMTerrain)
 
 #if defined(SWIGCSHARP) && defined(HAVE_OPENCRG)
 %shared_ptr(chrono::vehicle::CRGTerrain)
@@ -68,6 +89,13 @@
 %pointer_functions(int, intp)
 %pointer_functions(double, doublep)
 %include "../../../chrono_vehicle/terrain/SCMTerrain.h"
+
+%include "../../../chrono_fsi/math/custom_math.h"
+%include "../../../chrono_fsi/ChDefinitionsFsi.h"
+%include "../../../chrono_fsi/ChSystemFsi.h"
+%include "../../../chrono_fsi/ChFsiProblem.h"
+%include "../../../chrono_vehicle/terrain/CRMTerrain.h"
+
 
 #if defined(SWIGCSHARP) && defined(HAVE_OPENCRG)
 %include "../../../chrono_vehicle/terrain/CRGTerrain.h"
