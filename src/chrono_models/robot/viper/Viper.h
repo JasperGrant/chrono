@@ -325,11 +325,13 @@ class CH_MODELS_API Viper {
 
     std::array<std::shared_ptr<ChLinkMotorRotation>, 4> m_drive_motors;  ///< drive motors
     std::array<std::shared_ptr<ChLinkMotorRotation>, 4> m_steer_motors;  ///< steering motors
-    std::array<std::shared_ptr<ChLinkMotorRotation>, 4> m_lift_motors;   ///< lifting motors
+    std::array<std::shared_ptr<ChLinkMotorRotation>, 4> m_lift_motors_z;   ///< lifting motors (Z-axis, leg rotation)
+    std::array<std::shared_ptr<ChLinkMotorRotation>, 4> m_lift_motors;   ///< lifting motors (Y-axis, up/down)
 
     std::array<std::shared_ptr<ChFunctionSetpoint>, 4> m_drive_motor_funcs;  ///< drive motor functions
     std::array<std::shared_ptr<ChFunctionConst>, 4> m_steer_motor_funcs;     ///< steering motor functions
-    std::array<std::shared_ptr<ChFunctionConst>, 4> m_lift_motor_funcs;      ///< lifting motor functions
+    std::array<std::shared_ptr<ChFunctionConst>, 4> m_lift_motor_funcs_z;      ///< lifting motor functions (Z-axis)
+    std::array<std::shared_ptr<ChFunctionConst>, 4> m_lift_motor_funcs;      ///< lifting motor functions (Y-axis)
 
     std::array<std::shared_ptr<ChLinkTSDA>, 4> m_springs;    ///< suspension springs
     std::array<std::shared_ptr<ChShaft>, 4> m_drive_shafts;  ///< wheel drive-shafts
@@ -369,8 +371,9 @@ class CH_MODELS_API ViperDriver {
     /// This function sets the steering angle for the specified wheel.
     void SetSteering(double angle, ViperWheelID id);
 
-    /// Set current lift input angle.
-    void SetLifting(double angle);
+    /// Set current lift input angle (up/down motion).
+    void SetLifting(double angle, double z_angle);
+
 
   protected:
     ViperDriver();
@@ -385,7 +388,8 @@ class CH_MODELS_API ViperDriver {
 
     std::array<double, 4> drive_speeds;  ///< angular speeds for drive motors
     std::array<double, 4> steer_angles;  ///< angles for steer motors
-    std::array<double, 4> lift_angles;   ///< angles for lift motors
+    std::array<double, 4> lift_angles;   ///< angles for lift motors (Y-axis, up/down)
+    std::array<double, 4> lift_angles_z;   ///< angles for lift motors (Z-axis, leg rotation)
 
     friend class Viper;
 };
@@ -439,7 +443,8 @@ class CH_MODELS_API ViperDirectControl : public ViperDriver {
     void SetDirectControl(
       std::array<double, 4> m_drive_speeds, 
       std::array<double, 4> m_steer_angles,
-      std::array<double, 4> m_lift_angles
+      std::array<double, 4> m_lift_angles,
+      std::array<double, 4> m_lift_angles_z
     );
   private:
     virtual DriveMotorType GetDriveMotorType() const override { return DriveMotorType::SPEED; }

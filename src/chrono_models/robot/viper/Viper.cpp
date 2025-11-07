@@ -533,17 +533,49 @@ void Viper::Initialize(const ChFrame<>& pos) {
     };
 
     ChQuaternion<> z2x = QuatFromAngleY(CH_PI_2);
+    ChQuaternion<> straightup = QuatFromAngleY(0);
 
     for (int i = 0; i < 4; i++) {
         AddUniversalJoint(m_lower_arms[i]->GetBody(), m_uprights[i]->GetBody(), m_chassis, sr_rel_pos_lower[i], QUNIT);
         AddUniversalJoint(m_upper_arms[i]->GetBody(), m_uprights[i]->GetBody(), m_chassis, sr_rel_pos_upper[i], QUNIT);
 
-        // Add lifting motors at the connecting points between upper_arm & chassis and lower_arm & chassis
-        m_lift_motor_funcs[i] = chrono_types::make_shared<ChFunctionConst>(0.0);
-        m_lift_motors[i] = AddMotorAngle(m_chassis->GetBody(), m_lower_arms[i]->GetBody(), m_chassis,
-                                         cr_rel_pos_lower[i], z2x * lm_rot[i]);
+        m_lift_motor_funcs_z[i] = chrono_types::make_shared<ChFunctionConst>(0.0);  // Z-axis (leg rotation)
+
+        // Create intermediate body for Z-axis rotation (vertical axis)
+        auto lift_intermediate = chrono_types::make_shared<ChBodyEasyBox>(0.2, 0.2, 0.2, 1000, true, false);
+        ChFrame<> X_GC = m_chassis->GetBody()->GetFrameRefToAbs() * ChFrame<>(cr_rel_pos_lower[i], QUNIT);
+        lift_intermediate->SetPos(X_GC.GetPos());
+        lift_intermediate->SetRot(X_GC.GetRot());
+        m_system->Add(lift_intermediate);
+
+         // Create joint (DOF about Z axis of X_GC frame)
+        auto joint = chrono_types::make_shared<ChLinkLockRevolute>();
+        joint->Initialize(m_chassis->GetBody(), lift_intermediate, ChFrame<>(X_GC.GetPos(), X_GC.GetRot()));
+        m_chassis->GetBody()->GetSystem()->AddLink(joint);
+
+         // // Motor 1 (Z-axis / leg rotation): Connects chassis to intermediate body
+        // // QUNIT means Z-axis points up (vertical rotation)
+        m_lift_motors_z[i] = AddMotorAngle(m_chassis->GetBody(), lift_intermediate, m_chassis,
+                                            cr_rel_pos_lower[i], QUNIT);
+        m_lift_motors_z[i]->SetMotorFunction(m_lift_motor_funcs_z[i]);
+
+        AddRevoluteJoint(m_chassis->GetBody(), lift_intermediate, m_chassis, cr_rel_pos_upper[i], straightup);
+
+
+        // Create motor functions for 2-DOF active control
+        m_lift_motor_funcs[i] = chrono_types::make_shared<ChFunctionConst>(0.0);    // Y-axis (up/down)
+
+        auto joint_z = chrono_types::make_shared<ChLinkLockRevolute>();
+        joint_z->Initialize(lift_intermediate, m_lower_arms[i]->GetBody(), ChFrame<>(X_GC.GetPos(), z2x * lm_rot[i]));
+        m_chassis->GetBody()->GetSystem()->AddLink(joint_z);
+        
+
+        m_lift_motors[i] = AddMotorAngle(lift_intermediate, m_lower_arms[i]->GetBody(), m_chassis,
+                                          cr_rel_pos_lower[i], z2x * lm_rot[i]);
         m_lift_motors[i]->SetMotorFunction(m_lift_motor_funcs[i]);
-        AddRevoluteJoint(m_chassis->GetBody(), m_upper_arms[i]->GetBody(), m_chassis, cr_rel_pos_upper[i], z2x);
+
+        AddRevoluteJoint(lift_intermediate, m_upper_arms[i]->GetBody(), m_chassis, cr_rel_pos_upper[i],
+                          z2x);
 
         auto steer_rod = chrono_types::make_shared<ChBodyEasyBox>(0.1, 0.1, 0.1, 1000, true, false);
         steer_rod->SetPos(m_wheels[i]->GetPos());
@@ -664,6 +696,7 @@ void Viper::Update() {
         double driving = m_driver->drive_speeds[i];
         double steering = m_driver->steer_angles[i];
         double lifting = m_driver->lift_angles[i];
+        double lifting_z = m_driver->lift_angles_z[i];
 
         // Enforce maximum steering angle
         ChClampValue(steering, -m_max_steer_angle, +m_max_steer_angle);
@@ -671,6 +704,7 @@ void Viper::Update() {
         // Set motor functions
         m_steer_motor_funcs[i]->SetConstant(steering);
         m_lift_motor_funcs[i]->SetConstant(lifting);
+        m_lift_motor_funcs_z[i]->SetConstant(lifting_z);
         if (m_driver->GetDriveMotorType() == ViperDriver::DriveMotorType::SPEED)
             m_drive_motor_funcs[i]->SetSetpoint(driving, time);
     }
@@ -679,7 +713,11 @@ void Viper::Update() {
 // =============================================================================
 
 ViperDriver::ViperDriver()
-    : drive_speeds({0, 0, 0, 0}), steer_angles({0, 0, 0, 0}), lift_angles({0, 0, 0, 0}), viper(nullptr) {}
+    : drive_speeds({0, 0, 0, 0}), 
+      steer_angles({0, 0, 0, 0}), 
+      lift_angles({0, 0, 0, 0}), 
+      lift_angles_z({0, 0, 0, 0}),
+      viper(nullptr) {}
 
 void ViperDriver::SetSteering(double angle) {
     for (int i = 0; i < 4; i++)
@@ -690,10 +728,12 @@ void ViperDriver::SetSteering(double angle, ViperWheelID id) {
     steer_angles[id] = angle;
 }
 
-/// Set current lift input angles.
-void ViperDriver::SetLifting(double angle) {
+/// Set current lift input angle (up/down motion).
+void ViperDriver::SetLifting(double angle, double z_angle) {
     for (int i = 0; i < 4; i++)
         lift_angles[i] = angle;
+    for (int i = 0; i < 4; i++)
+        lift_angles_z[i] = z_angle;
 }
 
 ViperDCMotorControl::ViperDCMotorControl()
@@ -726,10 +766,11 @@ void ViperSpeedDriver::Update(double time) {
     drive_speeds = {speed, speed, speed, speed};
 }
 
-void ViperDirectControl::SetDirectControl(std::array<double, 4> m_drive_speeds, std::array<double, 4> m_steer_angles, std::array<double, 4> m_lift_angles){
+void ViperDirectControl::SetDirectControl(std::array<double, 4> m_drive_speeds, std::array<double, 4> m_steer_angles, std::array<double, 4> m_lift_angles, std::array<double, 4> m_lift_angles_z){
     drive_speeds = m_drive_speeds;
     steer_angles = m_steer_angles;
     lift_angles = m_lift_angles;
+    lift_angles_z = m_lift_angles_z;
 }
 
 }  // namespace viper
