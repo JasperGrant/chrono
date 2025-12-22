@@ -672,6 +672,29 @@ double Viper::GetWheelTracTorque(ViperWheelID id) const {
     return m_drive_motors[id]->GetMotorTorque();
 }
 
+double Viper::GetActiveSuspensionTorque(ViperWheelID id) const {
+    return m_lift_motors[id]->GetMotorTorque();
+}
+
+double Viper::GetActiveSuspensionTorqueZ(ViperWheelID id) const {
+    return m_lift_motors_z[id]->GetMotorTorque();
+}   
+
+double Viper::GetSteeringTorque(ViperWheelID id) const {
+    return m_steer_motors[id]->GetMotorTorque();
+}
+
+double Viper::GetActiveSuspensionVelocity(ViperWheelID id) const {
+    return m_lift_motors[id]->GetMotorAngleDt();
+}
+
+double Viper::GetActiveSuspensionVelocityZ(ViperWheelID id) const {
+    return m_lift_motors_z[id]->GetMotorAngleDt();
+}
+
+double Viper::GetSteeringVelocity(ViperWheelID id) const {
+    return m_steer_motors[id]->GetMotorAngleDt();
+}
 double Viper::GetRoverMass() const {
     double tot_mass = m_chassis->GetBody()->GetMass();
     for (int i = 0; i < 4; i++) {

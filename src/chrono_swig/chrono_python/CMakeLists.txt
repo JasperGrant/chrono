@@ -50,6 +50,7 @@ set(DBG_SCRIPT FALSE)
 #-----------------------------------------------------------------------------
 
 message(STATUS "Find Python")
+set(Python3_EXECUTABLE "C:/Users/jaspe/Documents/Thesis/DRL_Tutorial/thesis/Scripts/python.exe")
 find_package(Python3 REQUIRED 
              COMPONENTS Interpreter Development
              OPTIONAL_COMPONENTS NumPy)

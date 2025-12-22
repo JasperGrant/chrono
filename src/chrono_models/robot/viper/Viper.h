@@ -281,6 +281,18 @@ class CH_MODELS_API Viper {
     /// Get wheel tractive torque - if DC control set to off
     double GetWheelTracTorque(ViperWheelID id) const;
 
+    double GetActiveSuspensionTorque(ViperWheelID id) const;
+
+    double GetActiveSuspensionTorqueZ(ViperWheelID id) const;
+
+    double GetSteeringTorque(ViperWheelID id) const;
+
+    double GetActiveSuspensionVelocity(ViperWheelID id) const;
+
+    double GetActiveSuspensionVelocityZ(ViperWheelID id) const;
+
+    double GetSteeringVelocity(ViperWheelID id) const;
+
     /// Get wheel total applied torque.
     ChVector3d GetWheelAppliedTorque(ViperWheelID id) const;
 
@@ -303,6 +315,24 @@ class CH_MODELS_API Viper {
 
     /// Get steer motor.
     std::shared_ptr<ChLinkMotorRotation> GetSteerMotor(ViperWheelID id) const { return m_steer_motors[id]; }
+
+    /// Get lift motor (Y-axis up/down).
+    std::shared_ptr<ChLinkMotorRotation> GetLiftMotor(ViperWheelID id) const { return m_lift_motors[id]; }
+
+    /// Get lift motor Z-axis (leg rotation).
+    std::shared_ptr<ChLinkMotorRotation> GetLiftMotorZ(ViperWheelID id) const { return m_lift_motors_z[id]; }
+
+    /// Get lift motor torque (Y-axis up/down).
+    double GetLiftMotorTorque(ViperWheelID id) const { return m_lift_motors[id]->GetMotorTorque(); }
+
+    /// Get lift motor Z-axis torque (leg rotation).
+    double GetLiftMotorTorqueZ(ViperWheelID id) const { return m_lift_motors_z[id]->GetMotorTorque(); }
+
+    /// Get lift motor angular velocity (Y-axis up/down).
+    double GetLiftMotorAngVel(ViperWheelID id) const { return m_lift_motors[id]->GetMotorAngleDt(); }
+
+    /// Get lift motor Z-axis angular velocity (leg rotation).
+    double GetLiftMotorAngVelZ(ViperWheelID id) const { return m_lift_motors_z[id]->GetMotorAngleDt(); }
 
     /// Viper update function.
     /// This function must be called before each integration step.
