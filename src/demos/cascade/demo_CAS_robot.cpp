@@ -39,9 +39,20 @@ using namespace chrono::vsg3d;
 using namespace chrono;
 using namespace chrono::cascade;
 
-ChVisualSystem::Type vis_type = ChVisualSystem::Type::IRRLICHT;
+ChVisualSystem::Type vis_type = ChVisualSystem::Type::NONE;
 
 int main(int argc, char* argv[]) {
+#ifdef CHRONO_IRRLICHT
+    vis_type = ChVisualSystem::Type::IRRLICHT;
+#endif
+#ifdef CHRONO_VSG
+    vis_type = ChVisualSystem::Type::VSG;
+#endif
+    // Check for valid visualization system
+    if(vis_type == ChVisualSystem::Type::NONE) {
+        std::cout << "Configure chrono with VSG or Irrlicht to run this example!" << std::endl;
+        return 99;
+    }
     // 1- Create a Chrono physical system: all bodies and constraints
     //    will be handled by this ChSystemNSC object.
     ChSystemNSC sys;
@@ -437,16 +448,20 @@ int main(int argc, char* argv[]) {
 
     sys.SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
     sys.GetSolver()->AsIterative()->SetMaxIterations(200);
+    sys.GetSolver()->AsIterative()->SetTolerance(1e-6);
 
-    /*
-    // Alternative: the ADMM solver offers higher precision and it can also support FEA + nonsmooth contacts
-    auto solver = chrono_types::make_shared<ChSolverADMM>(); //faster, if MKL enabled:
-    chrono_types::make_shared<ChSolverPardisoMKL>()); solver->EnableWarmStart(true); solver->SetMaxIterations(60);
-    solver->SetRho(1);
-    solver->SetSigma(1e-8);
-    solver->SetStepAdjustPolicy(ChSolverADMM::AdmmStepType::BALANCED_UNSCALED);
-    sys.SetSolver(solver);
-    */
+    
+    //// Alternative: the ADMM solver offers higher precision and it can also support FEA + nonsmooth contacts
+    //auto solver = chrono_types::make_shared<ChSolverADMM>();
+    ////auto solver = chrono_types::make_shared<ChSolverADMM>(chrono_types::make_shared<ChSolverPardisoMKL>());  // faster, if MKL enabled
+    //solver->SetMaxIterations(60);
+    //solver->SetTolerance(1e-6);
+    //solver->EnableWarmStart(true); 
+    //solver->SetRho(1);
+    //solver->SetSigma(1e-8);
+    //solver->SetStepAdjustPolicy(ChSolverADMM::AdmmStepType::BALANCED_UNSCALED);
+    //sys.SetSolver(solver);
+    
 
     // Simulation loop
     ChRealtimeStepTimer realtime_timer;

@@ -181,11 +181,11 @@ if(CH_ENABLE_MODULE_VEHICLE AND CH_ENABLE_MODULE_VEHICLE_MODELS)
     endif()
 endif()
 
-if(CH_ENABLE_MODULE_FSI)
-    option(BUILD_DEMOS_FSI "Build demo programs for FSI module" TRUE)
+if(CH_ENABLE_MODULE_FSI_SPH)
+    option(BUILD_DEMOS_FSI "Build demo programs for FSI_SPH module" TRUE)
     mark_as_advanced(FORCE BUILD_DEMOS_FSI)
     if(BUILD_DEMOS_FSI)
-      add_subdirectory(fsi)
+      add_subdirectory(fsi/sph)
     endif()
 endif()
 
@@ -221,14 +221,6 @@ if(CH_ENABLE_MODULE_MODAL)
     endif()
 endif()
 
-if(CH_ENABLE_MODULE_CSHARP)
-    option(BUILD_DEMOS_CSHARP "Build demo programs for Csharp module" TRUE)
-    mark_as_advanced(FORCE BUILD_DEMOS_CSHARP)
-    if(BUILD_DEMOS_CSHARP)
-      add_subdirectory(csharp)
-    endif()
-endif()
-
 if(CH_ENABLE_MODULE_FMI)
     option(BUILD_DEMOS_FMI "Build demo programs for FMI support" TRUE)
     mark_as_advanced(FORCE BUILD_DEMOS_FMI)
@@ -242,5 +234,44 @@ if(CH_ENABLE_MODULE_PERIDYNAMICS)
     mark_as_advanced(FORCE BUILD_DEMOS_PERIDYNAMICS)
     if(BUILD_DEMOS_PERIDYNAMICS)
         add_subdirectory(peridynamics)
+    endif()
+endif()
+
+if(CH_ENABLE_MODULE_CSHARP)
+    option(BUILD_DEMOS_CSHARP "Build demo programs for Csharp module" TRUE)
+    mark_as_advanced(FORCE BUILD_DEMOS_CSHARP)
+    if(BUILD_DEMOS_CSHARP)
+       # Configure the standalone C# demo sub-build, forwarding the wrapper flag so
+       # it knows when chrono_csharp_wrapper.dll should be referenced instead of raw .cs files
+       add_custom_target(Csharp_demos ALL
+             COMMAND ${CMAKE_COMMAND} -S ${CMAKE_CURRENT_SOURCE_DIR}/csharp -B ${PROJECT_BINARY_DIR}/csharp
+                 -DCMAKE_RUNTIME_OUTPUT_DIRECTORY:PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                 -DCH_ENABLE_MODULE_VEHICLE:BOOL=${CH_ENABLE_MODULE_VEHICLE}
+                 -DCH_ENABLE_MODULE_SENSOR:BOOL=${CH_ENABLE_MODULE_SENSOR}
+                 -DCH_ENABLE_MODULE_POSTPROCESS:BOOL=${CH_ENABLE_MODULE_POSTPROCESS}
+                 -DCH_ENABLE_MODULE_IRRLICHT:BOOL=${CH_ENABLE_MODULE_IRRLICHT}
+                 -DCH_ENABLE_MODULE_VSG:BOOL=${CH_ENABLE_MODULE_VSG}
+                 -DCH_USE_CSHARP_WRAPPER:BOOL=${CH_USE_CSHARP_WRAPPER}
+             COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR}/csharp --config $<CONFIG>)
+       add_dependencies(Csharp_demos Chrono_csharp_core)
+       add_dependencies(Csharp_demos Chrono_csharp_robot)
+       if(CH_USE_CSHARP_WRAPPER)
+          add_dependencies(Csharp_demos Chrono_csharp_wrapper)
+          endif()
+       if(CH_ENABLE_MODULE_VEHICLE)
+          add_dependencies(Csharp_demos Chrono_csharp_vehicle)
+       endif()
+       if(CH_ENABLE_MODULE_SENSOR)
+          add_dependencies(Csharp_demos Chrono_csharp_sensor)
+       endif()
+       if(CH_ENABLE_MODULE_POSTPROCESS)
+          add_dependencies(Csharp_demos Chrono_csharp_postprocess)
+       endif()
+       if(CH_ENABLE_MODULE_IRRLICHT)
+          add_dependencies(Csharp_demos Chrono_csharp_irrlicht)
+       endif()
+       if(CH_ENABLE_MODULE_VSG)
+          add_dependencies(Csharp_demos Chrono_csharp_vsg)
+       endif()
     endif()
 endif()

@@ -37,9 +37,20 @@ using namespace chrono::vsg3d;
 using namespace chrono;
 using namespace chrono::cascade;
 
-ChVisualSystem::Type vis_type = ChVisualSystem::Type::IRRLICHT;
+ChVisualSystem::Type vis_type = ChVisualSystem::Type::NONE;
 
 int main(int argc, char* argv[]) {
+#ifdef CHRONO_IRRLICHT
+    vis_type = ChVisualSystem::Type::IRRLICHT;
+#endif
+#ifdef CHRONO_VSG
+    vis_type = ChVisualSystem::Type::VSG;
+#endif
+    // Check for valid visualization system
+    if(vis_type == ChVisualSystem::Type::NONE) {
+        std::cout << "Configure chrono with VSG or Irrlicht to run this example!" << std::endl;
+        return 99;
+    }
     // Create a Chrono physical system: all bodies and constraints
     // will be handled by this ChSystemNSC object.
     ChSystemNSC sys;
@@ -131,6 +142,9 @@ int main(int argc, char* argv[]) {
         true,                                                               // enable 2D collision
         material                                                            // contact material
     );
+    for (auto& shape : mgenevawheel->GetVisualModel()->GetShapeInstances())
+        shape.shape->SetColor(ChColor(0.57f, 0.4f, 0.57f));
+
     mgenevawheel->SetFrameRefToAbs(ChFrame<>(geneva_center));
     mgenevawheel->SetAngVelLocal(ChVector3d(0, 0, -0.08));
     sys.Add(mgenevawheel);
@@ -185,6 +199,8 @@ int main(int argc, char* argv[]) {
         true,                                                               // enable 2D collision
         material                                                            // contact material
     );
+    for (auto& shape : mcrank->GetVisualModel()->GetShapeInstances())
+        shape.shape->SetColor(ChColor(0.57f, 0.57f, 0.4f));
 
     // Do you need an additional profile at a different Z depht?
     // If so, use the AddProfile() function. It also updates the mass, COG position, collision shapes, etc.
@@ -241,6 +257,8 @@ int main(int argc, char* argv[]) {
         true,                                                               // enable 2D collision
         material                                                            // contact material
     );
+    for (auto& shape : mfollower->GetVisualModel()->GetShapeInstances())
+        shape.shape->SetColor(ChColor(0.4f, 0.57f, 0.57f));
     sys.Add(mfollower);
 
     // Revolute constraint
@@ -273,7 +291,10 @@ int main(int argc, char* argv[]) {
             vis_vsg->AttachSystem(&sys);
             vis_vsg->SetWindowSize(1024, 768);
             vis_vsg->SetWindowTitle("Use 2D profiles with OpenCASCADE for mass, inertia, meshing");
-            vis_vsg->AddCamera(ChVector3d(0.2, 0.2, -4.3));
+            vis_vsg->AddCamera(ChVector3d(2.0, -3.0, -2.3));
+            vis_vsg->SetLightIntensity(0.8f);
+            vis_vsg->SetLightDirection(-CH_PI_2, -CH_PI_4);
+            vis_vsg->EnableShadows();
             vis_vsg->Initialize();
 
             vis = vis_vsg;

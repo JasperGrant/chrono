@@ -93,6 +93,34 @@ if(DBG_SCRIPT)
 endif()
 
 #-----------------------------------------------------------------------------
+# Set SWIG flags for optional modules
+#-----------------------------------------------------------------------------
+
+if (CH_ENABLE_MODULE_VSG)
+  set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_VSG")
+endif()
+
+if (CH_ENABLE_MODULE_IRRLICHT)
+  set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_IRRLICHT")
+endif()
+
+if (CH_ENABLE_MODULE_FSI_SPH)
+  set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_FSI_SPH")
+endif()
+
+if (CH_ENABLE_MODULE_PARSERS AND HAVE_URDF)
+  set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_PARSERS_URDF")
+endif()
+
+if (CH_ENABLE_MODULE_SENSOR)
+  set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_SENSOR")
+endif()
+
+if (CH_ROS_HAS_INTERFACES)
+  set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_ROS_HAS_INTERFACES")
+endif()
+
+#-----------------------------------------------------------------------------
 # Generate init.py
 #-----------------------------------------------------------------------------
 
@@ -470,7 +498,7 @@ endif()
 # MODULE for the fsi python wrapper.
 #-----------------------------------------------------------------------------
 
-if(CH_ENABLE_MODULE_FSI AND CH_ENABLE_MODULE_FSI_SPH)
+if(CH_ENABLE_MODULE_FSI_SPH)
 
   message(STATUS "Add python FSI module")
 
@@ -487,11 +515,6 @@ if(CH_ENABLE_MODULE_FSI AND CH_ENABLE_MODULE_FSI_SPH)
     set_source_files_properties(${CHPY_FSI_MODULE_FILE} PROPERTIES COMPILE_OPTIONS ${CHRONO_SWIG_FLAGS})
   endif()
   
-  # Make sure CHRONO_VSG is defined for the SWIG processor
-  if (CH_ENABLE_MODULE_VSG)
-    set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_VSG")
-  endif()
-
   swig_add_library(${CHPY_FSI} LANGUAGE python SOURCES ${CHPY_FSI_MODULE_FILE})
   target_link_libraries(${CHPY_FSI} PRIVATE Python3::Python Chrono_core  Chrono_fsi Chrono_fsisph)
   
@@ -812,23 +835,9 @@ if(CH_ENABLE_MODULE_VEHICLE AND CH_ENABLE_MODULE_VEHICLE_MODELS)
     set_source_files_properties(${CHPY_VEHICLE_MODULE_FILE} PROPERTIES COMPILE_OPTIONS ${CHRONO_SWIG_FLAGS})
   endif()
 
-  # Make sure CHRONO_IRRLICHT is defined for the SWIG processor
-  if (CH_ENABLE_MODULE_IRRLICHT)
-    set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_IRRLICHT")
-  endif()
-
-  # Make sure CHRONO_VSG is defined for the SWIG processor
-  if (CH_ENABLE_MODULE_VSG)
-      set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_VSG")
-  endif()
-
-  # Make sure CHRONO_FSI is defined for the SWIG processor
-  if (CH_ENABLE_MODULE_FSI AND CH_ENABLE_MODULE_FSI_SPH)
-      set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_FSI")
-  endif()
-
   swig_add_library(${CHPY_VEHICLE} LANGUAGE python SOURCES ${CHPY_VEHICLE_MODULE_FILE})
   target_link_libraries(${CHPY_VEHICLE} PRIVATE Python3::Python Chrono_core Chrono_vehicle ChronoModels_vehicle)
+
   if(CH_ENABLE_MODULE_IRRLICHT)
     find_package(Irrlicht QUIET REQUIRED)
     target_link_libraries(${CHPY_VEHICLE} PRIVATE Chrono_vehicle_irrlicht Chrono_irrlicht Irrlicht::Irrlicht)
@@ -838,7 +847,7 @@ if(CH_ENABLE_MODULE_VEHICLE AND CH_ENABLE_MODULE_VEHICLE_MODELS)
       target_link_libraries(${CHPY_VEHICLE} PRIVATE Chrono_vehicle_vsg Chrono_vsg)
   endif()
 
-  if(CH_ENABLE_MODULE_FSI AND CH_ENABLE_MODULE_FSI_SPH)
+  if(CH_ENABLE_MODULE_FSI_SPH)
     target_link_libraries(${CHPY_VEHICLE} PRIVATE Chrono_fsi Chrono_fsisph)
   endif()
 
@@ -1151,20 +1160,8 @@ if(CH_ENABLE_MODULE_ROS)
 
   set_source_files_properties(${CHPY_ROS_MODULE_FILE} PROPERTIES CPLUSPLUS ON)
 
-  # Make sure CHRONO_PARSERS_URDF and/or CHRONO_SENSOR is defined for the SWIG processor
-  if (CH_ENABLE_MODULE_PARSERS AND HAVE_URDF)
-    set(CHRONO_SENSOR_SWIG_FLAGS "${CHRONO_SWIG_FLAGS};-DCHRONO_PARSERS_URDF")
-  endif()
-  if (CH_ENABLE_MODULE_SENSOR)
-    set(CHRONO_SENSOR_SWIG_FLAGS "${CHRONO_SENSOR_SWIG_FLAGS};-DCHRONO_SENSOR")
-  endif()
-
-  if (CH_ROS_HAS_INTERFACES)
-    set(CHRONO_SENSOR_SWIG_FLAGS "${CHRONO_SENSOR_SWIG_FLAGS};-DCHRONO_ROS_HAS_INTERFACES")
-  endif()
-
   if(MSVC)
-    set_source_files_properties(${CHPY_ROS_MODULE_FILE} PROPERTIES COMPILE_OPTIONS ${CHRONO_SENSOR_SWIG_FLAGS})
+    set_source_files_properties(${CHPY_ROS_MODULE_FILE} PROPERTIES COMPILE_OPTIONS ${CHRONO_SWIG_FLAGS})
   endif()
 
   swig_add_library(ros LANGUAGE python SOURCES ${CHPY_ROS_MODULE_FILE})
