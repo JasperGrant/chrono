@@ -52,7 +52,7 @@ include(${SWIG_USE_FILE})
 set(CHRONO_SWIG_OUTDIR "${PROJECT_BINARY_DIR}/chrono_csharp")
 
 # Set SWIG flags.  Disable selected SWIG warnings 
-# set(CMAKE_SWIG_FLAGS "-c++;-w401,503,833")
+set(CMAKE_SWIG_FLAGS "-w325,402,453,516,842")
 
 if(DBG_SCRIPT)
   message(STATUS "SWIG_USE_FILE:      ${SWIG_USE_FILE}")
@@ -79,8 +79,11 @@ if(CH_ENABLE_MODULE_PARSERS AND HAVE_URDF)
   set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_PARSERS_URDF")
 endif()
 
-if (CH_ENABLE_MODULE_SENSOR)
+if(CH_ENABLE_MODULE_SENSOR)
   set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_SENSOR")
+  if(CH_USE_SENSOR_OPTIX)
+    set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS};-DCHRONO_OPTIX")
+  endif()
 endif()
 
 if(CH_ENABLE_MODULE_VEHICLE AND HAVE_OPENCRG)
@@ -503,6 +506,9 @@ if(CH_ENABLE_MODULE_SENSOR)
 
   target_compile_definitions(Chrono_csharp_sensor PRIVATE "CH_IGNORE_DEPRECATED")
   target_compile_definitions(Chrono_csharp_sensor PRIVATE "IGNORE_DEPRECATED_WARNING")
+  if (CH_USE_SENSOR_OPTIX)
+    target_compile_definitions(Chrono_csharp_sensor PRIVATE "CHRONO_OPTIX")
+  endif()
 
   add_dependencies(Chrono_csharp_sensor Chrono_core)
   add_dependencies(Chrono_csharp_sensor Chrono_sensor)
